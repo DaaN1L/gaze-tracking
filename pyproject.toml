@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "gaze-tracking"
+version = "0.1.0"
+description = ""
+authors = ["Danil <dorofeev-danila@mail.ru>"]
+readme = "README.md"
+packages = [{include = "gaze_tracking"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyrealsense2 = "^2.53.1.4623"
+opencv-python = "^4.7.0.72"
+openvino-dev = "^2022.3.0"
+hydra-core = "^1.3.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
