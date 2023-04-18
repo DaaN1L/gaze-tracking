@@ -1,0 +1,8 @@
+precision: FP16
+name: face-detection-retail-0004
+path: ./models/${.name}/${.precision}/${.name}.xml
+confidence_threshold: 0.5
+roi_scale_factor: 1.15
+input_size:
+  w: 0
+  h: 0

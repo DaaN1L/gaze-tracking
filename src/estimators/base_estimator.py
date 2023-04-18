@@ -1,32 +1,23 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
 import logging as log
 
-from numpy.typing import NDArray
-from openvino.runtime import Core, AsyncInferQueue
+from openvino.runtime import AsyncInferQueue
 
 
 class BaseEstimator(ABC):
-    def __init__(self, core: Core, model_path: Path):
-        self.model = core.read_model(model=model_path)
-
-        self.compiled_model = ie.compile_model(model=model, device_name="CPU")
-        self.output_layer = self.compiled_model.output(0)
-        self.input_layer = self.compiled_model.input(0)
-
-    @abstractmethod
-    def predict(self, image: NDArray):
-        ...
-
-class Module:
     def __init__(self, core, model_path, model_type):
         self.core = core
         self.model_type = model_type
-        log.info('Reading {} model {}'.format(model_type, model_path))
+        log.info('Reading {} model from {}'.format(model_type, model_path))
         self.model = core.read_model(model_path)
-        self.model_path = model_path
+        self.output_shape = self.model.outputs[0].shape
+        self.input_tensor_name = self.model.inputs[0].get_any_name()
         self.active_requests = 0
-        self.clear()
+
+        self.outputs = {}
+        self.output_tensor = None
+        self.max_requests = None
+        self.infer_queue = None
 
     def deploy(self, device, max_requests=1):
         self.max_requests = max_requests
@@ -34,7 +25,7 @@ class Module:
         self.output_tensor = compiled_model.outputs[0]
         self.infer_queue = AsyncInferQueue(compiled_model, self.max_requests)
         self.infer_queue.set_callback(self.completion_callback)
-        log.info('The {} model {} is loaded to {}'.format(self.model_type, self.model_path, device))
+        log.info('The {} model is loaded to {}'.format(self.model_type, device))
 
     def completion_callback(self, infer_request, id):
         self.outputs[id] = infer_request.results[self.output_tensor]
@@ -65,3 +56,11 @@ class Module:
         self.clear()
         self.start_async(*inputs)
         return self.postprocess()
+
+    @abstractmethod
+    def postprocess(self):
+        ...
+
+    @abstractmethod
+    def start_async(self, *frame):
+        ...

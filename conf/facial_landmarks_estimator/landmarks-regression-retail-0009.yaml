@@ -1,0 +1,4 @@
+precision: FP16
+name: landmarks-regression-retail-0009
+path: ./models/${.name}/${.precision}/${.name}.xml
+points_number: 5

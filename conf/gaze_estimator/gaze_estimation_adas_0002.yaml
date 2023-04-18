@@ -1,0 +1,3 @@
+precision: FP16
+name: gaze-estimation-adas-0002
+path: ./models/${.name}/${.precision}/${.name}.xml

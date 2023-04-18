@@ -1,0 +1,28 @@
+device: CPU
+output_resolution: null
+face_detection_estimator:
+  precision: FP16
+  name: face-detection-retail-0004
+  path: ./models/${.name}/${.precision}/${.name}.xml
+  confidence_threshold: 0.5
+  roi_scale_factor: 1.15
+  input_size:
+    w: 0
+    h: 0
+gaze_estimator:
+  precision: FP16
+  name: gaze-estimation-adas-0002
+  path: ./models/${.name}/${.precision}/${.name}.xml
+head_pose_estimator:
+  precision: FP16
+  name: head-pose-estimation-adas-0001
+  path: ./models/${.name}/${.precision}/${.name}.xml
+eyes_state_estimator:
+  precision: FP16
+  name: open-closed-eye
+  path: ./models/${.name}/${.precision}/${.name}.xml
+facial_landmarks_estimator:
+  precision: FP16
+  name: landmarks-regression-retail-0009
+  path: ./models/${.name}/${.precision}/${.name}.xml
+  points_number: 5

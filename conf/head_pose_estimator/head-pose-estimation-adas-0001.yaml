@@ -1,0 +1,3 @@
+precision: FP16
+name: head-pose-estimation-adas-0001
+path: ./models/${.name}/${.precision}/${.name}.xml

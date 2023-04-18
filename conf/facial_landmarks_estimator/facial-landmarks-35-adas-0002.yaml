@@ -1,0 +1,4 @@
+precision: FP16
+name: facial-landmarks-35-adas-0002
+path: ./models/${.name}/${.precision}/${.name}.xml
+points_number: 35
