@@ -12,8 +12,6 @@ class FaceDetector(BaseEstimator):
         OUTPUT_SIZE = 7
 
         def __init__(self, output):
-            self.image_id = output[0]
-            self.label = int(output[1])
             self.confidence = output[2]
             self.position = np.array((output[3], output[4]))  # (x, y)
             self.size = np.array((output[5], output[6]))  # (w, h)
@@ -76,7 +74,7 @@ class FaceDetector(BaseEstimator):
         # outputs shape is [N_requests, 1, 1, N_max_faces, 7]
 
         results = []
-        for output in outputs[0][0]:
+        for output in outputs:
             result = FaceDetector.Result(output)
             if result.confidence < self.confidence_threshold:
                 break  # results are sorted by confidence decrease

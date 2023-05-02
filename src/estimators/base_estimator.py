@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging as log
 
 from openvino.runtime import AsyncInferQueue
+import numpy as np
 
 
 class BaseEstimator(ABC):
@@ -15,20 +16,20 @@ class BaseEstimator(ABC):
         self.active_requests = 0
 
         self.outputs = {}
-        self.output_tensor = None
+        self.output_tensors = None
         self.max_requests = None
         self.infer_queue = None
 
     def deploy(self, device, max_requests=1):
         self.max_requests = max_requests
         compiled_model = self.core.compile_model(self.model, device)
-        self.output_tensor = compiled_model.outputs[0]
+        self.output_tensors = compiled_model.outputs
         self.infer_queue = AsyncInferQueue(compiled_model, self.max_requests)
         self.infer_queue.set_callback(self.completion_callback)
         log.info('The {} model is loaded to {}'.format(self.model_type, device))
 
     def completion_callback(self, infer_request, id):
-        self.outputs[id] = infer_request.results[self.output_tensor]
+        self.outputs[id] = [infer_request.results[out] for out in self.output_tensors]
 
     def enqueue(self, input):
         if self.max_requests <= self.active_requests:
@@ -47,7 +48,7 @@ class BaseEstimator(ABC):
 
     def get_outputs(self):
         self.wait()
-        return [v for _, v in sorted(self.outputs.items())]
+        return [np.squeeze(v) for _, v in sorted(self.outputs.items())]
 
     def clear(self):
         self.outputs = {}

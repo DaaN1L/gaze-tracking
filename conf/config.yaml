@@ -4,7 +4,7 @@ defaults:
   - gaze_estimator: gaze_estimation_adas_0002
   - head_pose_estimator: head-pose-estimation-adas-0001
   - eyes_state_estimator: open-closed-eye-0001
-  - facial_landmarks_estimator: facial-landmarks-35-adas-0002
+  - facial_landmarks_estimator: landmarks-regression-retail-0009.yaml
 
 hydra:
   job:
@@ -12,3 +12,4 @@ hydra:
 
 device: CPU
 output_resolution: null
+debug: True

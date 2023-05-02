@@ -11,44 +11,53 @@ from src.utils import OutputTransform, draw_detections
 
 
 def deploy(cfg: DictConfig):
-    pipeline = rs.pipeline()
-    config = rs.config()
-
-    pipeline_wrapper = rs.pipeline_wrapper(pipeline)
-    pipeline_profile = config.resolve(pipeline_wrapper)
-    device = pipeline_profile.get_device()
-
     frame_processor = FrameProcessor(cfg)
+    if cfg.debug:
+       cap = cv2.VideoCapture(0)
+    else:
+        pipeline = rs.pipeline()
+        config = rs.config()
 
-    found_rgb = False
-    found_depth = False
-    for s in device.sensors:
-        sensor_name = s.get_info(rs.camera_info.name)
-        if sensor_name == 'RGB Camera':
-            found_rgb = True
-        elif sensor_name == 'Stereo Module':
-            found_depth = True
-    if not found_rgb:
-        log.error("The application requires camera with Color sensor")
-    elif not found_depth:
-        log.error("The application requires camera with Stereo sensor")
+        pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+        pipeline_profile = config.resolve(pipeline_wrapper)
+        device = pipeline_profile.get_device()
 
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-    pipeline.start(config)
+        found_rgb = False
+        found_depth = False
+        for s in device.sensors:
+            sensor_name = s.get_info(rs.camera_info.name)
+            if sensor_name == 'RGB Camera':
+                found_rgb = True
+            elif sensor_name == 'Stereo Module':
+                found_depth = True
+        if not found_rgb:
+            log.error("The application requires camera with Color sensor")
+        elif not found_depth:
+            log.error("The application requires camera with Stereo sensor")
+
+        config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+        config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+
+        pipeline.start(config)
 
     try:
         frame_num = 0
         while True:
-            frames = pipeline.wait_for_frames()
-            depth_frame = frames.get_depth_frame()
-            color_frame = frames.get_color_frame()
-            if not depth_frame or not color_frame:
-                continue
+            if cfg.debug:
+                ret, frames = cap.read()
+                color_image = np.asanyarray(frames)
+                if not ret:
+                    continue
+            else:
+                frames = pipeline.wait_for_frames()
+                depth_frame = frames.get_depth_frame()
+                color_frame = frames.get_color_frame()
+                if not depth_frame or not color_frame:
+                    continue
 
-            depth_image = np.asanyarray(depth_frame.get_data())
-            color_image = np.asanyarray(color_frame.get_data())
+                depth_image = np.asanyarray(depth_frame.get_data())
+                color_image = np.asanyarray(color_frame.get_data())
 
             if frame_num == 0:
                 output_transform = OutputTransform(color_image.shape[:2], cfg.output_resolution)
