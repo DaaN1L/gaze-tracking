@@ -5,6 +5,10 @@ class DataCollector:
     def __init__(self):
         self._data = []
 
+    @property
+    def num_collected(self):
+        return len(self._data)
+
     def get(self):
         return pd.DataFrame(self._data)
 

@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-# from ttkthemes import ThemedTk
+from ttkthemes import ThemedTk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 import cv2
@@ -19,7 +19,7 @@ class App(tk.Tk):
         super().__init__()
         self.data_collector = DataCollector()
         self.frame_processor = FrameProcessor(args)
-        self.video_capture = VideoCapture()
+        self.video_capture = MyVideoCapture()
 
         self.train_mse = 0
         self.val_mse = 0
@@ -28,11 +28,11 @@ class App(tk.Tk):
         self.height = self.winfo_screenheight()
         self.geometry("%dx%d" % (self.width, self.height))
         self.title(title)
-        self.bg = tk.Canvas(self)
-        self.bg.pack(fill=tk.BOTH, expand=True)
+        # self.bg = tk.Canvas(self)
+        # self.bg.pack(fill=tk.BOTH, expand=True)
 
-        self._build_control_menu(self)
         self._build_camera_frame(self)
+        self._build_control_menu(self)
 
         self.delay = update_delay
         self.update()
@@ -45,7 +45,8 @@ class App(tk.Tk):
             title="Select a file...",
             filetypes=(("Comma separated value file", "*.csv"),)
         )
-        self.data_collector.load(filename)
+        if filename:
+            self.data_collector.load(filename)
 
     def save_dataset(self):
         filename = asksaveasfilename(
@@ -53,7 +54,8 @@ class App(tk.Tk):
             filetypes=(("Comma separated value file", "*.csv"),),
             defaultextension=".csv"
         )
-        self.data_collector.save(filename)
+        if filename:
+            self.data_collector.save(filename)
 
     def start_drawing_heatmap(self):
         self.draw_heatmap = True
@@ -71,12 +73,12 @@ class App(tk.Tk):
 
     def _style_init(self):
         style = ttk.Style()
-        # style.theme_use("winxpblue")
+        style.theme_use("winxpblue")
         style.configure('TLabel', font=("Georgia", 16))
         style.configure('TButton', font=("Georgia", 14))
 
     def _build_camera_frame(self, container, side=tk.LEFT, anchor=tk.N):
-        self.canvas = tk.Canvas(container, width=int(self.width / 8), height=int(self.height / 8))
+        self.canvas = tk.Canvas(container, width=int(self.width // 4), height=int(self.height // 4))
         self.canvas.pack(side=side, anchor=anchor)
 
     def _build_control_menu(self, container, side=tk.RIGHT, anchor=tk.NE):
@@ -85,7 +87,7 @@ class App(tk.Tk):
         frame = tk.Frame(container, bg=bg_color)
 
         info_frame = tk.Frame(frame, bg=bg_color)
-        ttk.Label(info_frame, text=f"Total examples: {len(self.data)}")
+        ttk.Label(info_frame, text=f"Total examples: {self.data_collector.num_collected}")
         ttk.Label(info_frame, text=f"Train MSE: {self.train_mse}")
         ttk.Label(info_frame, text=f"Val MSE: {self.val_mse}")
 
@@ -114,15 +116,15 @@ class App(tk.Tk):
         color_frame, depth_frame = self.video_capture.get_frame()
         rois, landmarks, gazes, head_poses = self.frame_processor.process(color_frame)
         processed_face_frame = draw_detections(color_frame, (rois, landmarks, gazes))
-        processed_face_frame = resize_image(processed_face_frame, (self.width, self.height))
+        processed_face_frame = resize_image(color_frame, (self.width // 4, self.height // 4), keep_aspect_ratio=True)
 
-        if color_frame:
-            photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(processed_face_frame))
-            self.canvas.create_image(0, 0, image=photo, anchor=tk.NW)
+        if color_frame is not None:
+            self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(processed_face_frame))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
 
-        if self.is_training:
-            for roi, eyes_position, gaze, head_pose in zip(rois, landmarks, gazes, head_poses):
-                self.data_collector.add(face_position=roi.)
+        # if self.is_training:
+        #     for roi, eyes_position, gaze, head_pose in zip(rois, landmarks, gazes, head_poses):
+        #         self.data_collector.add(face_position=roi.)
 
         self.after(self.delay, self.update)
 
@@ -143,11 +145,11 @@ class MyVideoCapture:
             ret, frame = self.vid.read()
             if ret:
                 # Return a boolean success flag and the current frame converted to BGR
-                return (ret, cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), (400, 300)))
+                return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), None
             else:
-                return (ret, None)
+                return None, None
         else:
-            return (ret, None)
+            return None, None
 
     # Release the video source when the object is destroyed
     def __del__(self):

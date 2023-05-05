@@ -1,9 +1,6 @@
 import cv2
 import numpy as np
 
-from ..estimators.facial_landmarks_estimator import LandmarksDetector
-from ..estimators.face_detection_estimator import FaceDetector
-
 
 def draw_detections(frame, detections):
     def get_rectangle(roi_position, roi_size):
