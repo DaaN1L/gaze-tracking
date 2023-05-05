@@ -11,5 +11,7 @@ hydra:
     chdir: False
 
 device: CPU
-output_resolution: null
+output_resolution:
+  - 400
+  - 300
 debug: True

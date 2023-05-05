@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+from src.utils.resize_image import resize_image
 
 def crop(frame, roi_position, roi_size):
     p1 = roi_position.astype(int)
@@ -16,16 +17,6 @@ def cut_eyes(frame, eyes):
 
 def cut_rois(frame, rois):
     return [crop(frame, roi.position, roi.size) for roi in rois]
-
-
-def resize_image(image, size, keep_aspect_ratio=False, interpolation=cv2.INTER_LINEAR):
-    if not keep_aspect_ratio:
-        resized_frame = cv2.resize(image, size, interpolation=interpolation)
-    else:
-        h, w = image.shape[:2]
-        scale = min(size[1] / h, size[0] / w)
-        resized_frame = cv2.resize(image, None, fx=scale, fy=scale, interpolation=interpolation)
-    return resized_frame
 
 
 def resize_input(image, target_shape, nchw_layout):

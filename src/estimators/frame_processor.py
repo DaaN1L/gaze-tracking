@@ -35,4 +35,5 @@ class FrameProcessor:
         landmarks = self.landmarks_detector.infer((frame, rois))
         head_pose = self.head_pose_estimator.infer((frame, rois))
         gaze = self.gaze_estimator.infer((frame, landmarks, head_pose))
-        return [rois, landmarks, gaze]
+
+        return [rois, landmarks, gaze, head_pose]

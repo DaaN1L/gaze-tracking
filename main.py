@@ -1,13 +1,14 @@
 import logging as log
+from src.utils import resize_image
 
-import pyrealsense2 as rs
+# import pyrealsense2 as rs
 import numpy as np
 import cv2
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from src.estimators.frame_processor import FrameProcessor
-from src.utils import OutputTransform, draw_detections
+from src.utils import draw_detections
 
 
 def deploy(cfg: DictConfig):
@@ -59,15 +60,10 @@ def deploy(cfg: DictConfig):
                 depth_image = np.asanyarray(depth_frame.get_data())
                 color_image = np.asanyarray(color_frame.get_data())
 
-            if frame_num == 0:
-                output_transform = OutputTransform(color_image.shape[:2], cfg.output_resolution)
-                if cfg.output_resolution:
-                    output_resolution = output_transform.new_resolution
-                else:
-                    output_resolution = (color_image.shape[1], color_image.shape[0])
 
-            detections = frame_processor.process(color_image)
-            frame = draw_detections(color_image, detections, output_transform)
+            rois, landmarks, gaze, head_pose = frame_processor.process(color_image)
+            processed_face_frame = draw_detections(color_image, (rois, landmarks, gaze))
+            color_image = resize_image(processed_face_frame, (400, 200))
 
             frame_num += 1
 

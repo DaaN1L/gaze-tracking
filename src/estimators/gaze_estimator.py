@@ -35,5 +35,4 @@ class GazeEstimator(BaseEstimator):
 
     def postprocess(self):
         results = self.get_outputs()
-        print(results)
         return results
