@@ -7,7 +7,7 @@ from . import FaceDetector, LandmarksDetector, HeadPoseEstimator, GazeEstimator
 
 
 class FrameProcessor:
-    QUEUE_SIZE = 16
+    QUEUE_SIZE = 1
 
     def __init__(self, args: DictConfig):
         log.info('OpenVINO Runtime')
@@ -28,8 +28,8 @@ class FrameProcessor:
 
         rois = self.face_detector.infer((frame,))
         if self.QUEUE_SIZE < len(rois):
-            log.warning('Too many faces for processing. Will be processed only {} of {}'
-                        .format(self.QUEUE_SIZE, len(rois)))
+            # log.warning('Too many faces for processing. Will be processed only {} of {}'
+            #             .format(self.QUEUE_SIZE, len(rois)))
             rois = rois[:self.QUEUE_SIZE]
 
         landmarks = self.landmarks_detector.infer((frame, rois))

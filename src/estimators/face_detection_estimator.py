@@ -40,11 +40,6 @@ class FaceDetector(BaseEstimator):
         if len(self.model.outputs) != 1:
             raise RuntimeError("The model expects 1 output layer")
 
-        if args.input_size.w > 0 and args.input_size.h > 0:
-            self.model.reshape({self.input_tensor_name: PartialShape([1, 3, args.input_size.h, args.input_size.w])})
-        elif not (args.input_size.w == 0 and args.input_size.h == 0):
-            raise ValueError("Both input height and width should be positive for Face Detector reshape")
-
         self.input_shape = self.model.inputs[0].shape
         self.nchw_layout = self.input_shape[1] == 3
         if len(self.output_shape) != 4 or self.output_shape[3] != self.Result.OUTPUT_SIZE:

@@ -1,7 +1,7 @@
 import cv2
 
 
-def resize_image(image, size, keep_aspect_ratio=False, interpolation=cv2.INTER_LINEAR):
+def resize_image(image, size, keep_aspect_ratio=False, interpolation=cv2.INTER_LINEAR):  # (w, h)
     if not keep_aspect_ratio:
         resized_frame = cv2.resize(image, size, interpolation=interpolation)
     else:

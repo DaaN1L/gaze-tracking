@@ -59,7 +59,7 @@ class LandmarksDetector(BaseEstimator):
                 [1, self.points_number * 2, 1, 1], self.output_shape))
 
     def preprocess(self, frame, rois):
-        self.input_size = frame.shape  # (h, w)
+        self.input_size = frame.shape  # (h, w, c)
         inputs = cut_rois(frame, rois)
         inputs = [resize_input(input, self.input_shape, self.nchw_layout) for input in inputs]
         return inputs
@@ -71,7 +71,7 @@ class LandmarksDetector(BaseEstimator):
         inputs = self.preprocess(frame, rois)
         self.rois = {}
         for input, roi in zip(inputs, rois):
-            self.rois[self.active_requests] = roi
+            self.rois[self.active_requests] = roi  # (w, h)
             self.enqueue(input)
 
     def postprocess(self):

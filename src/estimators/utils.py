@@ -19,7 +19,7 @@ def cut_rois(frame, rois):
     return [crop(frame, roi.position, roi.size) for roi in rois]
 
 
-def resize_input(image, target_shape, nchw_layout):
+def resize_input(image, target_shape, nchw_layout):  # (h, w, c)
     if nchw_layout:
         _, _, h, w = target_shape
     else:
