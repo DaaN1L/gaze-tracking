@@ -1,3 +1,0 @@
-precision: FP16
-name: open-closed-eye-0001
-path: ./models/${.name}/${.precision}/${.name}.xml

@@ -58,16 +58,20 @@ class DataCollector:
     def generate_features(df: pd.DataFrame | list):
         if isinstance(df, pd.DataFrame):
             for column in df.columns:
-                df[column + "-pow2"] = df[column].map(lambda x: x ** 2)
-                df[column + "-pow3"] = df[column].map(lambda x: x ** 3)
-                df[column + "-log"] = df[column].map(lambda x: np.log(max(1, x)))
-                df[column + "-inv"] = df[column].map(lambda x: 1 / (x + 1e-6))
+                df[column + "_pow2"] = df[column].map(lambda x: x ** 2)
+                df[column + "_pow3"] = df[column].map(lambda x: x ** 3)
+                df[column + "_log"] = df[column].map(lambda x: np.log(max(1, x)))
+                df[column + "_inv"] = df[column].map(lambda x: 1 / (x + 1e-6))
+                df[column + "_sin"] = df[column].map(lambda x: np.sin(x))
+                df[column + "_cos"] = df[column].map(lambda x: np.cos(x))
         else:
             for x in df[:]:
                 df.append(x ** 2)
                 df.append(x ** 3)
                 df.append(np.log(max(1, x)))
                 df.append(1 / (x + 1e-6))
+                df.append(np.sin(x)),
+                df.append(np.cos(x))
         return df
 
     def add(self, face_position, face_size, distance_to_face,

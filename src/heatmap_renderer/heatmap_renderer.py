@@ -1,9 +1,12 @@
 import numpy as np
 import cv2
 
+from src.utils import resize_image
+
 
 class HeatmapRenderer:
-    def __init__(self, size, radius=100, filling_rate=10, decay_rate=0.99):  # (w, h)
+    def __init__(self, size, bg=None, radius=175, filling_rate=8, decay_rate=0.98):  # (w, h)
+        self.bg = resize_image(bg, size) if bg is not None else None
         self._decay_rate = decay_rate
         self._filling_rate = filling_rate
         self._size = size
@@ -26,4 +29,7 @@ class HeatmapRenderer:
     @property
     def heatmap(self):
         color_map = cv2.applyColorMap(cv2.convertScaleAbs(self._heatmap, alpha=0.03), cv2.COLORMAP_TURBO)
-        return cv2.cvtColor(color_map, cv2.COLOR_BGR2RGB)
+        color_map = cv2.cvtColor(color_map, cv2.COLOR_BGR2RGB)
+        if self.bg is not None:
+            color_map = cv2.addWeighted(color_map, 0.7, self.bg, 0.3, 0)
+        return color_map

@@ -3,15 +3,16 @@ defaults:
   - face_detection_estimator: face_detection_retail_0004
   - gaze_estimator: gaze_estimation_adas_0002
   - head_pose_estimator: head-pose-estimation-adas-0001
-  - eyes_state_estimator: open-closed-eye-0001
   - facial_landmarks_estimator: landmarks-regression-retail-0009.yaml
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
 
 hydra:
+  output_subdir: null
   job:
     chdir: False
+  run:
+    dir: .
 
 device: CPU
-output_resolution:
-  - 400
-  - 300
 debug: True

@@ -1,3 +1,5 @@
+from threading import Thread
+
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -6,9 +8,9 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 import numpy as np
 from omegaconf import DictConfig
-from sklearn.linear_model import Ridge
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor, AdaBoostRegressor
-from PIL.Image import fromarray
+from sklearn.ensemble import GradientBoostingRegressor
+from catboost import CatBoostRegressor
+from PIL import Image
 from PIL.ImageTk import PhotoImage
 
 from .data_collector import DataCollector
@@ -23,6 +25,7 @@ class App(ThemedTk):
     _TRAIN_MSE_TMP = "Train MSE: {:5.3f}"
     _VAL_MSE_TMP = "Val MSE: {:5.3f}"
     _SECONDARY_BG = "#99FFFF"
+    _BG = "images/bg.jpg"
 
     def __init__(self, args: DictConfig, title, update_delay=15):
         super().__init__()
@@ -42,8 +45,8 @@ class App(ThemedTk):
         self.data_collector = DataCollector()
         self.frame_processor = FrameProcessor(args)
         self.video_capture = VideoCapture()
-        self.screen_point_estimator = ScreenPointEstimator(Ridge)
-        self.heatmap_renderer = HeatmapRenderer(size=(self.width, self.height))
+        self.screen_point_estimator = ScreenPointEstimator(CatBoostRegressor, params={"silent": True, "loss_function": "MultiRMSE"})
+        self.heatmap_renderer = HeatmapRenderer(size=(self.width, self.height), bg=np.asarray(Image.open(self._BG)))
 
         self._style_init()
         self._build_camera_frame(self)
@@ -137,6 +140,24 @@ class App(ThemedTk):
             for b in button:
                 self.buttons[b]["state"] = "normal"
 
+    @staticmethod
+    def block_all(text):
+        def block_all_decorator(func):
+            def _wrapper(self, *args, **kwargs):
+                buttons_copy = {}
+                for button in self.buttons:
+                    buttons_copy[button] = {}
+                    buttons_copy[button]["text"] = self.buttons[button]["text"]
+                    buttons_copy[button]["state"] = self.buttons[button]["state"]
+                    self.buttons[button]["text"] = text
+                    self.buttons[button]["state"] = "disabled"
+                func(self, *args, **kwargs)
+                for button in self.buttons:
+                    self.buttons[button]["text"] = buttons_copy[button]["text"]
+                    self.buttons[button]["state"] = buttons_copy[button]["state"]
+            return _wrapper
+        return block_all_decorator
+
     def reset(self):
         if self._is_collecting:
             self.stop_collecting()
@@ -147,6 +168,8 @@ class App(ThemedTk):
         self.data_collector.reset()
         self.heatmap_renderer.clear()
         self.info["total_examples"]["text"] = self._TOTAL_EXAMPLES_TMP.format(self.data_collector.num_collected)
+        self.info["train_mse"]["text"] = self._TRAIN_MSE_TMP.format(0)
+        self.info["val_mse"]["text"] = self._VAL_MSE_TMP.format(0)
 
     def load_dataset(self):
         self.stop_collecting()
@@ -199,6 +222,10 @@ class App(ThemedTk):
     def start_training(self):
         self._disable_button("start_training")
         self._activate_button("draw_heatmap")
+        Thread(target=self._start_training).start()
+
+    @block_all("Training...")
+    def _start_training(self):
         self.screen_point_estimator.fit(self.data_collector.data, self.data_collector.target_columns)
         self.info["train_mse"]["text"] = self._TRAIN_MSE_TMP.format(self.screen_point_estimator.train_mse)
         self.info["val_mse"]["text"] = self._VAL_MSE_TMP.format(self.screen_point_estimator.val_mse)
@@ -228,7 +255,7 @@ class App(ThemedTk):
         self.info["total_examples"]["text"] = self._TOTAL_EXAMPLES_TMP.format(self.data_collector.num_collected)
 
     def _draw_in_canvas(self, canvas, array):
-        self._canvas_contents[canvas] = PhotoImage(image=fromarray(array))
+        self._canvas_contents[canvas] = PhotoImage(image=Image.fromarray(array))
         canvas.create_image(0, 0, image=self._canvas_contents[canvas], anchor=tk.NW)
 
     def update(self):
@@ -241,11 +268,12 @@ class App(ThemedTk):
         # Draw face and detections
         rois, landmarks, gazes, head_poses = self.frame_processor.process(color_frame)
         draw_detections(color_frame, (rois, landmarks, gazes))
-        processed_face_frame = resize_image(color_frame, (self.width // 5, self.height // 4), keep_aspect_ratio=True)
+        processed_face_frame = resize_image(color_frame, (self.width // 5, self.height // 4))
         self._draw_in_canvas(self.cam_canvas, processed_face_frame)
 
         # Find detections
         if not rois:
+            self._draw_in_canvas(self.bg, self.heatmap_renderer.heatmap)
             self.after(self.delay, self.update)
             return
         roi, eyes, gaze, head_pose = rois[0], landmarks[0], gazes[0], head_poses[0]
@@ -268,14 +296,13 @@ class App(ThemedTk):
 
         # Collect data
         if self._is_collecting and self._is_pressed and rois:
-            self.bg.create_text(x - 30, y - 25, anchor=tk.NW, text="CLICK!", fill="#004D40", font="Georgia, 16")
             self.collect_data(roi=roi,
                               eyes=eyes,
                               head_pose=head_pose,
                               gaze=gaze,
                               dist=dist,
                               screen_point=(x, y))
-
+            self.bg.create_text(x - 30, y - 25, anchor=tk.NW, text="CLICK!", fill="#004D40", font="Georgia, 16")
         self.after(self.delay, self.update)
 
 
