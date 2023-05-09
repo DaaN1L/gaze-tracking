@@ -9,12 +9,11 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 import numpy as np
 from omegaconf import DictConfig
 from sklearn.ensemble import GradientBoostingRegressor
-from catboost import CatBoostRegressor
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
 from .data_collector import DataCollector
-from .estimators import FrameProcessor, ScreenPointEstimator
+from .estimators import FrameProcessor, ScreenPointEstimatorSklearn, ScreenPointEstimatorCatboost
 from .heatmap_renderer import HeatmapRenderer
 from .video_capture import VideoCapture
 from .utils import draw_detections, resize_image, get_distance
@@ -22,8 +21,8 @@ from .utils import draw_detections, resize_image, get_distance
 
 class App(ThemedTk):
     _TOTAL_EXAMPLES_TMP = "Total examples: {:4d}"
-    _TRAIN_MSE_TMP = "Train MSE: {:5.3f}"
-    _VAL_MSE_TMP = "Val MSE: {:5.3f}"
+    _TRAIN_MSE_TMP = "Train RMSE: {:5.3f}"
+    _VAL_MSE_TMP = "Val RMSE: {:5.3f}"
     _SECONDARY_BG = "#99FFFF"
     _BG = "images/bg.jpg"
 
@@ -45,7 +44,14 @@ class App(ThemedTk):
         self.data_collector = DataCollector()
         self.frame_processor = FrameProcessor(args)
         self.video_capture = VideoCapture()
-        self.screen_point_estimator = ScreenPointEstimator(CatBoostRegressor, params={"silent": True, "loss_function": "MultiRMSE"})
+        self.screen_point_estimator = ScreenPointEstimatorCatboost(
+            use_best_model=True,
+            early_stopping_rounds=10,
+            iterations=2000,
+            random_strength=1,
+        )
+        # l2_leaf_reg
+        # random_strength
         self.heatmap_renderer = HeatmapRenderer(size=(self.width, self.height), bg=np.asarray(Image.open(self._BG)))
 
         self._style_init()
